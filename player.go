@@ -41,18 +41,3 @@ func (p *Player) splitName(name string) (string, string) {
 
 	return p.FirstName, p.LastName
 }
-
-func printHello(name string) {
-
-	pl := Player{}
-
-	pl.splitName(name)
-
-	//pl.printNames()
-
-	fmt.Printf(
-		"Hello, %s%s\n",
-		pl.FirstName,
-		pl.LastName,
-	)
-}
