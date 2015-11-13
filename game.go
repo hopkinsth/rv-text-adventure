@@ -5,7 +5,6 @@ import "github.com/tj/go-debug"
 import "io"
 import "fmt"
 import "strings"
-import "database/sql"
 import "math/rand"
 import "regexp"
 
@@ -174,42 +173,71 @@ func (g *localGame) parse(line string) {
 	// (verb) (prep.) (object) (prep.) (p. obj)
 	verb := parts[0]
 
-	var object, prep string
+	parseDebug("got all sentence parts: %s", parts)
 
+	var object, prep string
+	parseDebug("have %d words", len(parts))
 	for _, word := range parts[1:] {
+		parseDebug("found us a word")
 		switch {
 		case strings.Contains(preps, word):
+			parseDebug("got preposition")
 			prep = word
 		case strings.Contains(allItems, word):
+			parseDebug("found an item/object")
 			object = word
 		}
 
 		if object != "" && prep == "" {
-
+			if !canUseItem(object, verb) {
+				cmdParseFail()
+				return
+			}
 		}
 	}
 
 }
 
-func canUseItem(name string) {
-
-}
-
-var canUseActionQuery *sql.Stmt
-
-func init() {
+func canUseItem(item, action string) bool {
+	parseDebug("checking item usability")
 	var err error
-	canUseActionQuery, err = db.Prepare(
+	row := db.QueryRow(
 		`
 			select 
-				IF(COUNT(ita.ItemTypeID) > 0), 
+				IFNULL(a1.ActionID, a2.ActionID, 1) canUse,
 			from
-				TextAdventure.Items i 
-				join TextAdventure.Items_Actions ia using(ItemID)
+				TextAdventure.Items i
+				left join TextAdventure.Items_Actions ia using(ItemID)
+				left join TextAdventure.Actions a1 on a1.ActionID = ia.ActionID and a1.Action = UPPER(?)
 				left join TextAdventure.ItemTypes it on it.ItemTypeID = i.ItemType
 				left join TextAdventure.ItemTypes_Action ita on ita.ItemTypeID = it.ItemTypeID
-
-
+				left join TextAdventure.Actions a2 on a2.ActionID = ita.ActionID and a2.Action = UPPER(?)
+			where 
+				i.Item = ?				
 		`,
+		action,
+		action,
+		item,
 	)
+
+	if err != nil {
+		fmt.Println("whoa, this query failed:")
+		panic(err)
+	}
+
+	var canUse int
+	err = row.Scan(&canUse)
+
+	parseDebug("ran can use check, got %d", canUse)
+
+	if err != nil {
+		fmt.Println("whoa, this query failed:")
+		panic(err)
+	}
+
+	if canUse > 0 {
+		return true
+	} else {
+		return false
+	}
 }
