@@ -5,6 +5,9 @@ import _ "github.com/go-sql-driver/mysql"
 import "database/sql"
 import "encoding/json"
 import "io/ioutil"
+import "io"
+import "flag"
+import "github.com/chzyer/readline"
 
 type DbConfig struct {
 	DbHost string
@@ -12,7 +15,12 @@ type DbConfig struct {
 	DbPass string
 }
 
+var server = flag.Bool("server", false, "starts text adventure as a telnet server")
+
+var db *sql.DB
+
 func main() {
+	flag.Parse()
 	bstr, err := ioutil.ReadFile("db.json")
 
 	if err != nil {
@@ -28,7 +36,7 @@ func main() {
 		return
 	}
 
-	db, err := sql.Open(
+	db, err = sql.Open(
 		"mysql",
 		fmt.Sprintf(
 			"%s:%s@tcp(%s:3306)/",
@@ -49,4 +57,38 @@ func main() {
 	}
 
 	fmt.Println("connected to database")
+
+	if *server == true {
+		panic("not implemented!")
+	} else {
+		startLocal()
+		return
+	}
+}
+
+func startLocal() {
+	rl, err := readline.NewEx(
+		&readline.Config{
+			Prompt: "> ",
+		},
+	)
+
+	if err != nil {
+		panic(err)
+	}
+
+	for {
+		line, err := rl.Readline()
+
+		if err == io.EOF {
+			return
+		}
+
+		if err != nil {
+			panic(err)
+		}
+
+		fmt.Printf("got %s", line)
+		fmt.Println("thx thx thx")
+	}
 }

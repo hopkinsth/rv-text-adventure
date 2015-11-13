@@ -6,7 +6,6 @@ import "strings"
 type Player struct {
 	FirstName string
 	LastName  string
-	GameBegin int
 }
 
 func (p *Player) printNames() {
@@ -38,16 +37,14 @@ func (p *Player) splitName(name string) (string, string) {
 	}
 
 	p.FirstName = fName
-	p.LastName = lName
+	p.LastName = strings.TrimLeft(lName, " ")
 
 	return p.FirstName, p.LastName
 }
 
 func printHello(name string) {
 
-	pl := Player{
-		GameBegin: 12131727,
-	}
+	pl := Player{}
 
 	pl.splitName(name)
 
