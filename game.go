@@ -178,7 +178,7 @@ func (g *localGame) parse(line string) {
 
 	parseDebug("got all sentence parts: %s", parts)
 
-	var object, prep string
+	var object, prep, prepObj string
 	for _, parts := range parts {
 		verb := parts[1]
 		parseDebug("have %d words", len(parts))
@@ -192,6 +192,13 @@ func (g *localGame) parse(line string) {
 			case strings.Contains(strings.ToLower(allItems), word):
 				parseDebug("found an item/object")
 				object = word
+			case object != "" && prep != "":
+				if !strings.Contains(strings.ToLower(allItems), word) {
+					cmdParseFail()
+					return
+				} else {
+					prepObj = word
+				}
 			}
 
 			if object != "" && prep == "" {
