@@ -3,6 +3,8 @@ package main
 import "github.com/chzyer/readline"
 import "io"
 import "fmt"
+import "strings"
+import "math/rand"
 
 type Actions map[int]string
 
@@ -28,6 +30,9 @@ func NewLocalGame(rl *readline.Instance) *localGame {
 
 	pl := &Player{}
 	pl.splitName(line)
+
+	// TODO: this needs to go into a
+	// more generic constructor func
 
 	// pre-fill with actions
 	r, err := db.Query(`
@@ -80,8 +85,24 @@ func (g *localGame) play() {
 	}
 }
 
+var failedCmds = [...]string{
+	"What was that?",
+	"Try again, please!",
+	"First time using a keyboard?",
+}
+
+func cmdParseFail() {
+	d := rand.Intn(len(failedCmds))
+	fmt.Println(failedCmds[d])
+}
+
 // this needs to be something we can share
 // between local and telnet games
-func (g *localGame) parse(_ string) {
-	return
+func (g *localGame) parse(line string) {
+	// split this line
+	tokens := strings.Split(line, " ")
+	if len(tokens) == 1 && tokens[0] == "" {
+		cmdParseFail()
+		return
+	}
 }
