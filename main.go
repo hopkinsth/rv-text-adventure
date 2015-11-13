@@ -5,7 +5,6 @@ import _ "github.com/go-sql-driver/mysql"
 import "database/sql"
 import "encoding/json"
 import "io/ioutil"
-import "io"
 import "flag"
 import "github.com/chzyer/readline"
 
@@ -77,18 +76,7 @@ func startLocal() {
 		panic(err)
 	}
 
-	for {
-		line, err := rl.Readline()
+	g := NewLocalGame(rl)
+	g.play()
 
-		if err == io.EOF {
-			return
-		}
-
-		if err != nil {
-			panic(err)
-		}
-
-		fmt.Printf("got %s", line)
-		fmt.Println("thx thx thx")
-	}
 }
