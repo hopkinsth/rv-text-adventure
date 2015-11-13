@@ -3,9 +3,42 @@ package main
 import "fmt"
 import "strings"
 
+type Actions map[int]string
+
+// maps an item to its quantity
+//type Inventory map[Item]int
+
+// <VERB> [<object> | <direction>]
+// 	 [<preposition> <p. obj.>]
+//
+// where prep. is one of
+// TO, WITH, AT, ON, UNDER
+//
+//
+// get badge
+// look
+// hug <person>
+// throw bowling ball [ at pins | at basket ball hoop ]
+// use shower
+// put lettuce on sandwich
+//
+// show inventory
+// inventory
+// show me the goods
+//
+// HELP
+// 		WTF? try do
+
+type Item struct {
+	ItemID       int
+	Item         int
+	ValidActions []int
+}
+
 type Player struct {
 	FirstName string
 	LastName  string
+	//Inventory Inventory
 }
 
 func (p *Player) printNames() {
