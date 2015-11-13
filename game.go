@@ -178,9 +178,9 @@ func (g *localGame) parse(line string) {
 
 	parseDebug("got all sentence parts: %s", parts)
 
-	var object, prep, prepObj string
+	var object, prep, prepObj, verb string
 	for _, parts := range parts {
-		verb := parts[1]
+		verb = parts[1]
 		parseDebug("have %d words", len(parts))
 		for _, word := range parts[2:] {
 			word = strings.ToLower(word)
@@ -210,6 +210,11 @@ func (g *localGame) parse(line string) {
 			}
 		}
 	}
+
+	parseDebug(
+		"finished parsing, verb = %s, object = %s, prep = %s, pobj = %s",
+		verb, object, prep, prepObj,
+	)
 
 }
 
