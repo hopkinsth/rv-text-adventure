@@ -102,9 +102,8 @@ lolwut:
 		)
 
 		sentence := fmt.Sprintf(
-			"(?i)(%s)\\s?(%s)?\\s?(%s)?\\s?(%s)?\\s?(%s)?",
+			"(?i)(%s)\\s?(%s)?\\s?(%s)?\\s?(%s)?",
 			allActions,
-			preps,
 			allItems,
 			preps,
 			allItems,
@@ -175,46 +174,39 @@ func (g *localGame) parse(line string) {
 	parts := sentenceRegexp.FindAllStringSubmatch(line, -1)
 
 	// (verb) (prep.) (object) (prep.) (p. obj)
+	// use an array w/fixed size to guarantee that all parts will be there
+	var matches [4]string
+
+	for _, m := range parts {
+		for i, v := range m {
+			if i > 0 {
+				parseDebug("%d %s", i, v)
+				matches[i-1] = v
+			}
+		}
+	}
 
 	parseDebug("got all sentence parts: %s", parts)
 
 	var object, prep, prepObj, verb string
-	for _, parts := range parts {
-		verb = parts[1]
-		parseDebug("have %d words", len(parts))
-		for _, word := range parts[2:] {
-			word = strings.ToLower(word)
-			//parseDebug("found us a word")
-			switch {
-			case strings.Contains(strings.ToLower(preps), word):
-				parseDebug("got preposition")
-				prep = word
-			case strings.Contains(strings.ToLower(allItems), word):
-				parseDebug("found an item/object")
-				object = word
-			case object != "" && prep != "":
-				if !strings.Contains(strings.ToLower(allItems), word) {
-					cmdParseFail()
-					return
-				} else {
-					prepObj = word
-				}
-			}
-
-			if object != "" && prep == "" {
-
-				if !canUseItem(object, verb) {
-					cmdParseFail()
-					return
-				}
-			}
-		}
-	}
+	verb = matches[0]
+	object = matches[1]
+	prep = matches[2]
+	prepObj = matches[3]
 
 	parseDebug(
 		"finished parsing, verb = %s, object = %s, prep = %s, pobj = %s",
 		verb, object, prep, prepObj,
 	)
+
+	if verb != "" && object != "" {
+		// if verb and object, we must check
+		// that we can use the verb on the object
+		if !canUseItem(object, verb) {
+			cmdParseFail()
+			return
+		}
+	}
 
 }
 
