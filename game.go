@@ -21,6 +21,7 @@ type game interface {
 type localGame struct {
 	player  *Player
 	actions Actions
+	roomID  int
 	rl      *readline.Instance
 }
 
@@ -121,6 +122,7 @@ lolwut:
 		player:  pl,
 		actions: actions,
 		rl:      rl,
+		roomID:  1,
 	}
 }
 
@@ -199,40 +201,67 @@ func (g *localGame) parse(line string) {
 		verb, object, prep, prepObj,
 	)
 
+	var canUse bool
+	var resText, resAction string
+
 	if verb != "" && object != "" {
 		// if verb and object, we must check
 		// that we can use the verb on the object
-		if !canUseItem(object, verb) {
+		canUse, resText, resAction = tryAction(object, verb, g.roomID)
+		if !canUse {
 			cmdParseFail()
 			return
 		}
-	}
+
+		if resText != "" {
+			fmt.Println(resText)
+		}
+
+		if resAction != "" {
+			// need to parse action!
+		}
+	} else if 
 
 }
 
-func canUseItem(item, action string) bool {
+// checks that you can perform an action on an item
+// returns
+// 	- whether you can use the item (bool)
+// 	- what text to display (if any)
+// 	- how to modify game state
+func tryAction(action, item string, roomID int) (bool, string, string) {
 	parseDebug("checking item usability")
 	var err error
 	row := db.QueryRow(
 		`
 			select 
-				SUM(IFNULL(COALESCE(a1.ActionID, a2.ActionID), 0)) canUse
+				SUM(IFNULL(COALESCE(a1.ActionID, a2.ActionID), 0)) canUse,
+				GROUP_CONCAT(distinct COALESCE(ria.ResponseText, ia.ResponseText, '')) ResponseText,
+				GROUP_CONCAT(distinct COALESCE(ria.ResponseAction, ia.ResponseAction, '')) ResponseAction
 			from
-				TextAdventure.Items i
-				left join TextAdventure.Items_Actions ia using(ItemID)
+				TextAdventure.Actions a 
+				left join TextAdventure.Items_Actions ia on ia.ActionID = a.ActionID
+				left join TextAdventure.Items i on i.ItemID = ia.ItemID and i.Item = ?
+
 				left join TextAdventure.Items_ItemTypes iit on iit.ItemID = i.ItemID
 				left join TextAdventure.Actions a1 on a1.ActionID = ia.ActionID and a1.Action = UPPER(?)
 				left join TextAdventure.ItemTypes it on it.ItemTypeID = iit.ItemTypeID
 				left join TextAdventure.ItemTypes_Actions ita on ita.ItemTypeID = it.ItemTypeID
 				left join TextAdventure.Actions a2 on a2.ActionID = ita.ActionID and a2.Action = UPPER(?)
-			where 
-				LOWER(i.Item) = ?
+
+				left join TextAdventure.Rooms_Items_Actions ria on 
+					ria.RoomID = ? and ria.ItemID = i.ItemID and ria.ActionID = coalesce(a1.ActionID, a2.ActionID, a.ActionID)
+			where
+				// (LOWER(i.Item) = ? or i.Item IS NULL)
+				and a.Action = ?
 			group by
 				i.ItemID
 		`,
-		action,
-		action,
 		item,
+		action,
+		action,
+		roomID,
+		action,
 	)
 
 	if err != nil {
@@ -241,7 +270,8 @@ func canUseItem(item, action string) bool {
 	}
 
 	var canUse int
-	err = row.Scan(&canUse)
+	var responseText, responseAction string
+	err = row.Scan(&canUse, &responseText, &responseAction)
 
 	parseDebug("ran can use check, got %d", canUse)
 
@@ -250,9 +280,10 @@ func canUseItem(item, action string) bool {
 		panic(err)
 	}
 
+	var ok bool
 	if canUse > 0 {
-		return true
-	} else {
-		return false
+		ok = true
 	}
+
+	return ok, responseText, responseAction
 }
