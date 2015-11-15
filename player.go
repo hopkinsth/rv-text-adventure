@@ -35,10 +35,15 @@ type Item struct {
 	ValidActions []int
 }
 
+type InventoryItem struct {
+	quantity int
+	Item
+}
+
 type Player struct {
 	FirstName string
 	LastName  string
-	//Inventory Inventory
+	Inventory []InventoryItem
 }
 
 func (p *Player) printNames() {
