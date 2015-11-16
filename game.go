@@ -217,10 +217,11 @@ func (g *localGame) parse(line string) {
 			fmt.Println(resText)
 		}
 
-		if resAction != "" {
-			// need to parse action!
+		switch resAction {
+		case "print-room-description":
+
 		}
-	} else if 
+	}
 
 }
 
@@ -237,7 +238,7 @@ func tryAction(action, item string, roomID int) (bool, string, string) {
 			select 
 				SUM(IFNULL(COALESCE(a1.ActionID, a2.ActionID), 0)) canUse,
 				GROUP_CONCAT(distinct COALESCE(ria.ResponseText, ia.ResponseText, '')) ResponseText,
-				GROUP_CONCAT(distinct COALESCE(ria.ResponseAction, ia.ResponseAction, '')) ResponseAction
+				GROUP_CONCAT(distinct COALESCE(ria.ResponseAction, ia.ResponseAction, a.ResponseAction, '')) ResponseAction
 			from
 				TextAdventure.Actions a 
 				left join TextAdventure.Items_Actions ia on ia.ActionID = a.ActionID
@@ -286,4 +287,73 @@ func tryAction(action, item string, roomID int) (bool, string, string) {
 	}
 
 	return ok, responseText, responseAction
+}
+
+type room struct {
+	name        string
+	description string
+	accessible  map[int]*room
+	items       map[int]*item
+}
+
+func getRooms() []*room {
+	allRooms := map[int]*room{}
+	//allItems := map[int]*item{}
+	res, err := db.Query(
+		`
+			select
+				r.RoomID,
+				r.Room,
+				r.Description,
+				i.Item,
+				i.ItemID,
+				rr.ToRoomID,
+				tr.Room ToRoom,
+				tr.Description ToDescription
+			from 	
+				TextAdventure.Rooms r 
+				join TextAdventure.Rooms_Items ri using(RoomID)
+				join TextAdventure.Room_Rooms rr on rr.FromRoomID = r.RoomID
+				join TextAdventure.Rooms tr on tr.RoomID = rr.ToRoomID
+		`,
+	)
+
+	if err != nil {
+		fmt.Println("Error retrieving rooms")
+		panic(err)
+	}
+
+	for res.Next() {
+		var roomId, itemId, toRoomId int
+		var name, description, itemName string
+		res.Scan(&roomId, &name, &description, &itemName, &itemId, &toRoomId)
+
+		if allRooms[roomId] == nil {
+			allRooms[roomId] = &room{
+				name:        name,
+				description: description,
+				accessible:  map[int]*room{},
+				items:       map[int]*item{},
+			}
+		}
+
+		room := allRooms[roomId]
+
+		if itemId != 0 && room.items[itemId] == nil {
+			room.items[itemId] = &item{
+				ItemID: itemId,
+				//Item:   item,
+			}
+		}
+
+		if room.accessible[toRoomId] == nil {
+			if allRooms[roomId] != nil {
+
+			} else {
+
+			}
+		}
+	}
+
+	return nil
 }
