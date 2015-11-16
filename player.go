@@ -29,7 +29,7 @@ type Actions map[int]string
 // HELP
 // 		WTF? try do
 
-type Item struct {
+type item struct {
 	ItemID       int
 	Item         int
 	ValidActions []int
@@ -37,7 +37,7 @@ type Item struct {
 
 type InventoryItem struct {
 	quantity int
-	Item
+	item
 }
 
 type Player struct {
